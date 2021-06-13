@@ -13,7 +13,6 @@ class GithubAdmin(object):
     '''creates an instance of GitHub Account Controller'''
 
     base_url = "https://api.github.com"
-    truthy = ['true', '1', 't', 'y', 'yes']
 
     def __init__(self, token: str) -> None:
         self.token = token
@@ -108,6 +107,10 @@ class GithubAdmin(object):
         repo_url = f"{self.base_url}/repos/{await self.user}/{repo_name}"
         return await self.aiohttp_get(repo_url)
 
+    async def repo_issues(self, repo_name: str):
+        issues_url = f"{self.base_url}/repos/{await self.user}/{repo_name}/issues"
+        return await self.aiohttp_get(issues_url)
+    """
 
     async def update_repo(self, repo_name, message, content, sha, path) -> dict:
         '''
@@ -127,18 +130,11 @@ class GithubAdmin(object):
             | `content`   | string    | body  | `Required`. The new file content, using Base64 encoding. |
             | `sha`       | string    | body  | `Required` if you are updating a file. The blob SHA of the file being replaced. |
         '''
-        url = self.base_url + f"/repos/{await self.user}/{repo_name}/contents/{path}"
+        url = f"{self.base_url}/repos/{await self.user}/{repo_name}/contents{path}"
         data = json.dumps({'message': message,
                            'content': content,
-                           'sha': sha,
-                           })
+                           'sha': sha, })
         return await self.aiohttp_put(url, data=data)
-
-
-    async def repo_issues(self, repo_name: str):
-        issues_url = f"{self.base_url}/repos/{await self.user}/{repo_name}/issues"
-        return await self.aiohttp_get(issues_url)
-    """
 
     async def get_repo_readme(self, repo_name: str) -> tuple[str, str]:
         '''
@@ -164,25 +160,26 @@ class GithubAdmin(object):
         content = str(base64.b64decode(base64_encoded_readme), encoding='utf-8')
         return content, sha
 
-    async def update_repo_readme(self, repo_name: str, section_start: str,
-                                 section_end: str, new_content: str) -> dict:
+    async def update_repo_readme(self, repo_name: str,
+                                 start_end_contents: list[tuple[str, str, str]]) -> dict:
         '''
-            `updates/creates` repo's `readme` with `new_content` provided that
-            a pair of `section_start` and `section_end` were given.
-            * attention: pair of `section_start` and `section_end` should exists and be unique inside the previous readme.md
+        `updates/creates` repo's `readme` with new content between start and end
         '''
-        repo_readme_url = f"{self.base_url}/repos/{await self.user}/{repo_name}/contents/README.md"
+        repo_readme_path = "/README.md"
 
         old_readme_content, sha = await self.get_repo_readme(repo_name)
 
-        new_readme = self.readme_b64encoder(section_start, section_end,
-                                            new_content, old_readme_content)
+        new_readme = self.readme_b64encoder(*start_end_contents[0], old_readme_content)
 
-        data = json.dumps({'message': 'updated by GitHub actions',
-                           'content': new_readme,
-                           'sha': sha, })
+        if len(start_end_contents) > 1:
+            for change in start_end_contents[1:]:
+                old_readme_content = new_readme
+                new_readme = self.readme_b64encoder(*change, old_readme_content)
 
-        return await self.aiohttp_put(repo_readme_url, data=data)
+        message = 'updated by GitHubAdmin project',
+
+        return await self.update_repo(repo_name, message=message, content=new_readme,
+                                      sha=sha, path=repo_readme_path)
 
     async def get_repo_commits(self, repo_name: str) -> None:
         '''
@@ -234,7 +231,11 @@ class GithubAdmin(object):
     def readme_b64encoder(self, section_start: str, section_end: str,
                           new_content: str, file_content: str) -> str:
         '''Replace file_content between section_start and section_end (both are excluded) with new_content'''
+
         commutable = f"{section_start}[\\s\\S]+{section_end}"
+
         data = f"{section_start}\n{new_content}\n{section_end}"
+
         content = re.sub(commutable, data, file_content)
+
         return base64.b64encode(content.encode('utf-8')).decode("utf-8")

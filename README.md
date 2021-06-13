@@ -6,7 +6,7 @@ though these Python classes are more capable than just manipulate a readme file.
 ## About The Project
 
 The purpose of this project is to update the `readme.md` file of the github profile
-with data from the user's github activities and links to RSS feed urls (if provided).  
+with data from the user's github activities, wakatime information and links to RSS feed urls (if provided).  
 The `GithubAdmin` class could be a powerful github management program
 هf it can get the required functions and permissions that such a program needs,
 but this project was not about this idea.  
@@ -35,9 +35,9 @@ directory, write the following code down inside of it<sup id="yml">[\*](#yml-foo
 name: github-profile-admin # Optional - The name of the workflow as it will appear in the Actions tab of the GitHub repository.
 
 on:
-  schedule:
-    - cron: '0 00 * * *' # runs at 00:00 UTC everyday
-
+  schedule: # Run workflow automatically
+    - cron: '0 */6 * * *' # This means every sixth hour starting from 0, i.e. at hour 0, 6, 12 and 18
+  workflow_dispatch: # Run workflow manually (without waiting for the cron to be called), through the Github Actions Workflow page directly
 jobs: # Groups together all the jobs that run in the yml workflow file.
   build:
     runs-on: ubuntu-latest
