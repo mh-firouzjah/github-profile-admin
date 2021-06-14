@@ -14,7 +14,7 @@ show_gists = config('SHOW_GISTS', default=None)
 gists_tag = config('GISTS_TAG', cast=Csv(),
                    default="<!-- GISTS:START -->,<!-- GISTS:END -->")
 
-need_view_counter = config('SHOW_VIEWCOUNTER', default=None)
+show_views = config('SHOW_VIEWCOUNTER', default=None)
 views_tag = config('VIEWS_TAG', cast=Csv(),
                    default="<!-- VIEW_COUNTER:START -->,<!-- VIEW_COUNTER:END -->")
 
@@ -37,7 +37,7 @@ def profile_views_markdown(views: int) -> str:
     return f"![Profile Views](https://img.shields.io/badge/Weekly%20Views-{views}-blue?style=social&logo=github)"
 
 
-print(show_gists, need_view_counter)
+print(blog_feeds)
 
 '''
 async def main():

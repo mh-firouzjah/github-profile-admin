@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 *.json
+mynotes.txt
 
 # C extensions
 *.so
